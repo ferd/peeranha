@@ -1,0 +1,15 @@
+{application, peeranha, [
+  {description, "Distributed DB with sync"},
+  {registered, [peeranha]},
+  {vsn, "0.1.0"},
+  {applications, [
+    kernel,
+    stdlib,
+    merklet,
+    interclock,
+    gproc]},
+  {mod, {peeranha_app, []}},
+  {env, [
+  ]}
+]}.
+
