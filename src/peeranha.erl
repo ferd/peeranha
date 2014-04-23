@@ -1,9 +1,10 @@
 %%% TODO: - Deleted entries GC in merkle tree
 %%%       - allow to retire into another node
 -module(peeranha).
--export([boot/2, retire/1, fork/3, sync/2, pull/2, pull/4]).
+-export([boot/2, fork/3, retire/1, retire/2,
+         sync/2, pull/2, pull/4]).
 -export([read/2, peek/2, write/3, delete/2]).
--export([sync/4, fork/1]).
+-export([sync/4, fork/1, merge/2]).
 
 %%%%%%%%%%%%%%%%%%%%%
 %%% DB MANAGEMENT %%%
@@ -22,6 +23,17 @@ fork(Remote, Name, Dir) ->
     {UUID, NewId} = peeranha_peer:fork(Remote),
     peeranha:boot(Name, [{uuid, UUID}, {name, Name}, {dir, Dir},
                          {type, normal}, {id, NewId}]).
+
+retire(Name) ->
+    peeranha_sync:retire(Name),
+    interclock:retire(Name).
+
+%% You should ask the peer to do a pull sync first
+%% if you want to avoid data loss!
+retire(Local, Peer) ->
+    {_UUID, Id} = interclock:identity(Local),
+    retire(Local),
+    peeranha_peer:merge(Peer, Id).
 
 
 %% Push/pull mechanism
@@ -89,10 +101,6 @@ pull(Local, Peer, Pre, Post) ->
                  {[],[],[]},
                  Ops).
 
-retire(Name) ->
-    peeranha_sync:retire(Name),
-    interclock:retire(Name).
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% KEY/VAL OPERATIONS %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -123,8 +131,13 @@ sync(Name, Key, Event, Val) ->
     peeranha_sync:write(Name, Key, TreeVal),
     Res.
 
+-spec fork(Name::term()) -> {UUID::binary(), Id::term()}.
 fork(Name) ->
     interclock:fork(Name).
+
+-spec merge(Name::term(), Id::term()) -> {UUID::binary(), NewId::term()}.
+merge(Name, Id) ->
+    interclock:join(Name, Id).
 
 %%%%%%%%%%%%%%%
 %%% PRIVATE %%%

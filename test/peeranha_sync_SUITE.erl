@@ -11,7 +11,8 @@
 
 all() ->
     [build, diff1, diff2, diff3,
-     pull1, pull2].
+     pull1, pull2,
+     retire].
 
 init_per_testcase(build, Config) ->
     {ok, Started} = application:ensure_all_started(peeranha),
@@ -36,7 +37,8 @@ init_per_testcase(Case, Config) ->
     [{started, Started},
      {uuid, FakeUUID},
      {name, Name},
-     {name_fork, ForkName}| Config].
+     {name_fork, ForkName},
+     {forked_id, NewId} | Config].
 
 end_per_testcase(_, Config) ->
     [application:stop(Start) || Start <- ?config(started, Config)].
@@ -240,4 +242,18 @@ pull2(Config) ->
            ;  (A, B, C, D) -> error({A,B,C,D})
     end,
     {_,[<<"key4">>],_} = peeranha:pull(NameFork, {peeranha_erldist, {node(), Name}}, Pre5, Post).
+
+retire(Config) ->
+    %% Retiring a node shuts it down and the id can be remotely
+    %% absorbed by the peer.
+    Name = ?config(name, Config),
+    NameFork = ?config(name_fork, Config),
+    ForkedId = ?config(forked_id, Config),
+    peeranha:write(Name, <<"a">>, val),
+    peeranha:write(NameFork, <<"b">>, val),
+    {_, _BaseId} = peeranha:retire(NameFork, {peeranha_erldist, {node(), Name}}),
+    %% Forking again should yield the same Id given it was merged back in
+    {_, ForkedId} = peeranha:fork(Name),
+    {_, OtherId} = peeranha:fork(Name),
+    ?assertNotEqual(ForkedId, OtherId).
 

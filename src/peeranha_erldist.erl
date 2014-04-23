@@ -1,5 +1,5 @@
 -module(peeranha_erldist).
--export([acquire/1, release/2, peek/2, sync/4, fork/1]).
+-export([acquire/1, release/2, peek/2, sync/4, fork/1, merge/2]).
 -export([access/4]).
 
 acquire({Node, Name}) ->
@@ -16,6 +16,9 @@ sync({Node, Name}, Key, Event, Vals) ->
 
 fork({Node, Name}) ->
     rpc:call(Node, peeranha, fork, [Name]).
+
+merge({Node, Name}, Id) ->
+    rpc:call(Node, peeranha, merge, [Name, Id]).
 
 access({Node, Name}, Ref, Op, Path) ->
     rpc:call(Node, peeranha_sync, access, [Name, Ref, Op, Path]).

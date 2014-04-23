@@ -1,5 +1,5 @@
 -module(peeranha_peer).
--export([acquire/1, release/2, peek/2, sync/4, fork/1]).
+-export([acquire/1, release/2, peek/2, sync/4, fork/1, merge/2]).
 -export([access/4]).
 
 %% Lock the remote tree to prepare for a diffing
@@ -21,6 +21,10 @@ sync({Mod, Addr}, Key, Event, Val) ->
 %% Fork a DB to be copied from the remote version
 fork({Mod, Addr}) ->
     Mod:fork(Addr).
+
+%% Merge a DB Id from a peer that retired.
+merge({Mod, Addr}, Id) ->
+    Mod:merge(Addr, Id).
 
 %% Accessor function required by the diffing algorithm
 access({Mod, Addr}, Ref, Op, Path) ->

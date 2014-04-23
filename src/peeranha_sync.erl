@@ -1,6 +1,6 @@
 -module(peeranha_sync).
 -behaviour(gen_server).
--export([boot/1, retire/1, write/3, delete/2, trigger/1,
+-export([boot/1, retire/1, write/3, delete/2,
          acquire/1, release/2, diff/2, access/4]).
 -export([start_link/1]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -38,9 +38,6 @@ write(Name, Key, Val) ->
 
 delete(Name, Key) ->
     gen_server:call(?name(Name), {delete, Key}).
-
-trigger(Name) ->
-    gen_server:call(?name(Name), trigger).
 
 acquire(Name) -> % {ok, Ref}
     gen_server:call(?name(Name), {acquire, self()}).
@@ -90,9 +87,6 @@ handle_call({write, Key, Val}, _From, State=#state{canonical=Tree}) ->
     {reply, ok, State#state{canonical=merklet:insert({Key, term_to_binary(Val)}, Tree)}};
 handle_call({delete, Key}, _From, State=#state{canonical=Tree}) ->
     {reply, ok, State#state{canonical=merklet:delete(Key, Tree)}};
-handle_call(trigger, _From, State=#state{name=Name}) ->
-    Tree = load(Name),
-    {reply, ok, State#state{canonical=Tree}};
 
 %% Diff management
 handle_call({acquire, Pid}, _From, State=#state{canonical=Tree, copies=Cp}) ->
@@ -150,8 +144,8 @@ handle_info(Info, State=#state{}) ->
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
-terminate({shutdown, trigger}, _State) ->
-    {shutdown, trigger}.
+terminate({shutdown, retire}, _State) ->
+    {shutdown, retire}.
 
 %%%%%%%%%%%%%%%
 %%% PRIVATE %%%
